@@ -2,6 +2,10 @@
 
 单文件 HTML 原型，v1.0 定稿（2026-10-17）。原生 JS + 本地 ECharts，**不依赖网络，离线可开**。
 
+## 在线预览
+
+**https://zhoulinke0908.github.io/admin-dashboard/**
+
 ## 打开方式
 
 仓库内直接打开 `index.html` 即可，需保证 `libs/echarts.min.js` 与它保持同目录关系。
