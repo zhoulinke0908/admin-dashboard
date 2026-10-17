@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>宙斯后台 · 首页看板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text-1: #1d2129;
+    --text-2: #4e5969;
+    --text-3: #86909c;
+    --line: #eef0f3;
+    --primary: #1677ff;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(29, 33, 41, .03), 0 3px 10px rgba(29, 33, 41, .04);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d6dae1; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 侧边栏 ============ */
+  .sidebar {
+    width: 212px;
+    background: #212a3e;
+    display: flex; flex-direction: column;
+    position: fixed; left: 0; top: 0; bottom: 0;
+    overflow-y: auto; z-index: 60;
+  }
+  .sidebar::-webkit-scrollbar-thumb { background: #3b455c; }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 18px 16px; flex: 0 0 auto;
+  }
+  .brand-logo {
+    width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+    background: linear-gradient(135deg, #4f9dff, #1677ff);
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 15px; letter-spacing: -.5px;
+  }
+  .brand-name { color: #fff; font-size: 14px; font-weight: 600; line-height: 1.2; }
+  .brand-sub { color: #6b768e; font-size: 10px; letter-spacing: .6px; margin-top: 2px; }
+
+  .nav { padding: 4px 10px 20px; flex: 1; }
+  .nav-group {
+    color: #5d6880; font-size: 11px; letter-spacing: .5px;
+    padding: 14px 10px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px; border-radius: 7px;
+    color: #a4aec2; font-size: 13px; cursor: pointer;
+    text-decoration: none; user-select: none;
+    transition: background .15s, color .15s;
+    margin-bottom: 2px;
+  }
+  .nav-item svg { flex: 0 0 auto; }
+  .nav-item:hover { background: rgba(255, 255, 255, .06); color: #e6ebf5; }
+  .nav-item.active { background: var(--primary); color: #fff; font-weight: 500; box-shadow: 0 2px 8px rgba(22, 119, 255, .35); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #faad14; margin-left: auto; }
+
+  /* ============ 主区 ============ */
+  .main { flex: 1; min-width: 0; margin-left: 212px; display: flex; flex-direction: column; }
+
+  .topbar {
+    height: 56px; flex: 0 0 auto; background: #fff;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 20px; position: sticky; top: 0; z-index: 30;
+  }
+  .hamburger {
+    display: none; width: 32px; height: 32px; border: none; background: none;
+    cursor: pointer; border-radius: 6px; color: var(--text-2);
+    place-items: center; font-size: 18px; line-height: 1;
+  }
+  .hamburger:hover { background: #f2f3f5; }
+  .crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); }
+  .crumbs b { color: var(--text-1); font-weight: 600; }
+  .crumbs i { font-style: normal; color: #c9cdd4; }
+  .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    background: #f4f5f7; border-radius: 8px; padding: 0 12px; height: 34px;
+    width: 240px; color: var(--text-3); transition: background .15s;
+  }
+  .search:focus-within { background: #eef4ff; box-shadow: inset 0 0 0 1px #bcd8ff; }
+  .search input { border: none; background: none; outline: none; font-size: 13px; width: 100%; color: var(--text-1); }
+  .search input::placeholder { color: #a9b0bb; }
+  /* 清除按钮：有输入时显示；窄屏展开态常显（用于收起搜索框） */
+  .search-clear {
+    display: none; border: none; background: none; cursor: pointer;
+    color: var(--text-3); font-size: 12px; line-height: 1; padding: 3px;
+    border-radius: 4px; flex: 0 0 auto;
+  }
+  .search-clear:hover { color: var(--text-1); background: #e2e5ea; }
+  .search.has-value .search-clear { display: block; }
+  /* 窄屏下由放大镜按钮唤起的搜索入口 */
+  .search-trigger { display: none; }
+
+  /* ===== 浮层：搜索结果 / 模块显隐 ===== */
+  .pop-panel {
+    position: fixed; z-index: 80; background: #fff;
+    border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 32px rgba(29, 33, 41, .14);
+    overflow: hidden; animation: popIn .14s ease;
+  }
+  .pop-panel[hidden] { display: none; }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+  }
+  .search-panel { width: 340px; max-height: 400px; overflow-y: auto; padding: 6px; }
+  .sp-group { padding: 8px 10px 4px; font-size: 11px; color: var(--text-3); }
+  .sp-item {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+    border-radius: 7px; cursor: pointer; font-size: 13px;
+  }
+  .sp-item:hover, .sp-item.on { background: #f2f6fc; }
+  .sp-ico {
+    width: 22px; height: 22px; border-radius: 6px; flex: 0 0 auto;
+    display: grid; place-items: center; font-size: 11px; color: #fff;
+  }
+  .sp-main { flex: 1; min-width: 0; }
+  .sp-main > span { display: block; }
+  .sp-name { color: var(--text-1); font-weight: 500; }
+  .sp-name mark { background: #fff1b8; color: inherit; border-radius: 2px; padding: 0 1px; }
+  .sp-desc {
+    font-size: 11px; color: var(--text-3); margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sp-empty { padding: 22px 12px; text-align: center; color: var(--text-3); font-size: 12px; line-height: 1.7; }
+  .sp-empty b { color: var(--text-2); font-weight: 500; }
+  .sp-foot {
+    padding: 7px 10px; border-top: 1px solid var(--line); margin-top: 4px;
+    font-size: 11px; color: var(--text-3); display: flex; gap: 12px;
+  }
+  .sp-foot kbd {
+    font-family: inherit; background: #f4f5f7; border: 1px solid #e5e8ef;
+    border-radius: 3px; padding: 0 4px; font-size: 10px;
+  }
+
+  .module-panel { width: 246px; }
+  .pop-head {
+    padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--text-1);
+    border-bottom: 1px solid var(--line);
+  }
+  .pop-list { padding: 6px; max-height: 320px; overflow-y: auto; }
+  .pop-row {
+    display: flex; align-items: center; gap: 9px; padding: 8px 8px;
+    border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text-1);
+  }
+  .pop-row:hover { background: #f6f7f9; }
+  .pop-row input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; flex: 0 0 auto; }
+  .pop-row .dot { width: 8px; height: 8px; border-radius: 2px; background: var(--primary); flex: 0 0 auto; }
+  .pop-foot {
+    padding: 9px 12px; border-top: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pop-btn {
+    border: 1px solid var(--line); background: #fff; border-radius: 6px;
+    padding: 5px 11px; font-size: 12px; color: var(--text-2); cursor: pointer;
+  }
+  .pop-btn:hover { border-color: #bcd8ff; color: var(--primary); background: #f5f9ff; }
+  .pop-tip { font-size: 11px; color: var(--text-3); }
+
+  /* 模块被隐藏 / 定位高亮 */
+  [data-module].is-hidden { display: none !important; }
+  @keyframes moduleFlash {
+    0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+    12% { box-shadow: 0 0 0 3px rgba(22, 119, 255, .38); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+  }
+  [data-module].flash { animation: moduleFlash 1.7s ease; border-radius: 12px; }
+  .nav-item.flash { animation: moduleFlash 1.7s ease; }
+  .empty-tip {
+    padding: 22px 16px; text-align: center; font-size: 13px; color: var(--text-3);
+    background: #fff; border: 1px dashed var(--line); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .empty-tip[hidden] { display: none; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: none; background: transparent;
+    display: grid; place-items: center; cursor: pointer; color: var(--text-2);
+    position: relative; transition: background .15s;
+  }
+  .icon-btn:hover { background: #f2f3f5; }
+  /* 有模块被隐藏时，眼睛按钮保持激活态，提示当前看板不完整 */
+  .icon-btn.on { background: #e8f1ff; color: var(--primary); }
+  .icon-btn .badge {
+    position: absolute; top: 6px; right: 6px; width: 6px; height: 6px;
+    border-radius: 50%; background: #f5222d; border: 1.5px solid #fff;
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    background: linear-gradient(135deg, #7cc0ff, #1677ff);
+    display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+  }
+
+  .content { padding: 16px 20px 36px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ============ 指标卡 ============ */
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .stat:hover { box-shadow: 0 4px 16px rgba(29, 33, 41, .08); transform: translateY(-1px); }
+  .stat-icon {
+    width: 48px; height: 48px; border-radius: 11px; flex: 0 0 auto;
+    display: grid; place-items: center; color: #fff;
+  }
+  .stat-meta { min-width: 0; }
+  .stat-label { font-size: 13px; color: var(--text-3); margin-bottom: 6px; }
+  .stat-value {
+    font-size: 26px; font-weight: 700; line-height: 1.1;
+    letter-spacing: -.6px; font-variant-numeric: tabular-nums;
+  }
+  .stat-trend { font-size: 11px; color: var(--text-3); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+  .up { color: #f5222d; } .down { color: #00b42a; }
+
+  /* ============ 卡片 ============ */
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 20px 16px;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .card-title::before {
+    content: ""; width: 3px; height: 15px; border-radius: 2px;
+    background: linear-gradient(180deg, #4f9dff, #1677ff); flex: 0 0 auto;
+  }
+  .card-title small { font-size: 12px; font-weight: 400; color: var(--text-3); margin-left: 2px; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .chips.center { justify-content: center; } /* 优先级高于 .chips，窄屏下也保持居中 */
+  /* 曲线图下方居中的时间范围切换 */
+  .range-bar { display: flex; justify-content: center; margin-top: 12px; }
+  .chip {
+    padding: 4px 13px; border-radius: 999px; background: #f2f3f5; color: var(--text-2);
+    font-size: 12px; cursor: pointer; border: 1px solid transparent;
+    transition: all .15s; user-select: none; white-space: nowrap;
+  }
+  .chip:hover { background: #e8eaed; color: var(--text-1); }
+  .chip.active {
+    background: #e8f1ff; color: var(--primary); font-weight: 600;
+    border-color: #bcd8ff; box-shadow: 0 1px 4px rgba(22, 119, 255, .15);
+  }
+  /* 租户标签前的色块，与曲线颜色一致，替代图表内的图例 */
+  .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+
+  /* ============ 表格 ============ */
+  .tbl-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+  table.tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  .tbl th {
+    background: #fafbfc; color: var(--text-3); font-weight: 500; font-size: 12px;
+    text-align: left; padding: 11px 14px; white-space: nowrap;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .tbl th:first-child { border-radius: 8px 0 0 8px; }
+  .tbl th:last-child { border-radius: 0 8px 8px 0; }
+  .tbl td { padding: 13px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .tbl tbody tr { cursor: pointer; transition: background .15s; }
+  .tbl tbody tr:hover { background: #f7f9fc; }
+  .tbl tbody tr.active { background: #eef5ff; }
+  .tbl tbody tr.active td { border-bottom-color: #d6e6ff; }
+  .tbl tbody tr:last-child td { border-bottom: none; }
+  table.tbl.static tbody tr { cursor: default; }
+  .tname { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+  .tname .dot { width: 8px; height: 8px; border-radius: 3px; flex: 0 0 auto; }
+  .num { font-variant-numeric: tabular-nums; }
+  .num.strong { font-weight: 600; }
+  .rate { display: flex; align-items: center; gap: 9px; min-width: 130px; }
+  .mini-bar { flex: 1; height: 6px; border-radius: 3px; background: #eef0f3; overflow: hidden; }
+  .mini-bar > i { display: block; height: 100%; border-radius: 3px; transition: width .5s ease; }
+  .rate span { font-size: 12px; color: var(--text-2); width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ============ 网格 ============ */
+  /* 并排两卡统一等宽（5:5），保持左右对称 */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+  .donut-flex { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
+  /* 同一行两卡等高时，环形图区域撑满并垂直居中，避免卡片下方留白 */
+  .grid-2 > .card { display: flex; flex-direction: column; }
+  .grid-2 > .card > .donut-flex { flex: 1; }
+  .donut-wrap { position: relative; height: 208px; flex: 0 1 200px; min-width: 165px; }
+  .donut-wrap > div:first-child { height: 100%; }
+  .donut-center {
+    position: absolute; inset: 0; display: grid; place-content: center;
+    text-align: center; pointer-events: none;
+  }
+  .donut-center b { font-size: 24px; font-weight: 700; display: block; letter-spacing: -.5px; }
+  .donut-center span { font-size: 12px; color: var(--text-3); }
+  /* 图例：名称 / 数量 / 占比三者紧挨成一组（不做两端拉伸），数量与占比按列对齐 */
+  .legend-list { flex: 0 1 auto; display: flex; flex-direction: column; gap: 11px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 13px; white-space: nowrap; }
+  .legend-item .dot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+  .legend-name { flex: 0 0 auto; min-width: 62px; color: var(--text-2); }
+  .legend-val { flex: 0 0 auto; min-width: 30px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .legend-pct {
+    flex: 0 0 auto; min-width: 42px; text-align: right;
+    color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+
+  .chart-box { height: 262px; }
+  .chart-box.tall { height: 330px; }
+  .chart-box.short { height: 240px; }
+  .chart-box.stackbar { height: 288px; }
+
+  .card-head.stacked { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .card-head.stacked .chips { justify-content: flex-start; }
+
+  .hint { font-size: 11px; color: var(--text-3); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+  .hint[hidden] { display: none; }
+
+  /* ============ 席位构成 ============ */
+  .seat-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+  .seat-legend .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .seat-legend .lg i { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+  /* 构成条：四段（管理员 / 已登录员工 / 从未登录 / 未开通），每段数字都必须标出 */
+  .seat-stack { display: flex; flex: 1; height: 22px; border-radius: 4px; overflow: hidden; font-size: 11px; color: #fff; }
+  .seat-stack > i { display: grid; place-items: center; font-style: normal; font-variant-numeric: tabular-nums; }
+  .seat-cell { display: flex; align-items: center; min-width: 220px; }
+  /* 到期判断标签 */
+  .rtag { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .rtag.red { background: #ffeeec; color: #c22f24; }
+  .rtag.orange { background: #fff7e6; color: #b26a00; }
+  .rtag.green { background: #eafaf3; color: #0f7a55; }
+  .rtag.gray { background: #f2f3f5; color: var(--text-2); }
+
+  /* ============ 响应式 ============ */
+  @media (max-width: 1280px) {
+    .grid-2 { grid-template-columns: minmax(0, 1fr); }
+    .donut-wrap { flex: 0 0 200px; }
+  }
+  @media (max-width: 1080px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .search { width: 180px; }
+  }
+  @media (max-width: 900px) {
+    .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); transition: transform .25s ease; }
+    .sidebar.open { transform: none; box-shadow: 4px 0 24px rgba(0, 0, 0, .25); }
+    .main { margin-left: 0; }
+    .hamburger { display: grid; }
+    .topbar { padding: 0 14px; gap: 10px; }
+    .content { padding: 14px 14px 32px; gap: 14px; }
+    /* 窄屏收起搜索框，改由放大镜按钮唤起，展开后铺满顶栏 */
+    .search { display: none; }
+    .search-trigger { display: grid; }
+    .topbar.search-open .crumbs { visibility: hidden; }
+    .topbar.search-open .search {
+      display: flex; position: absolute; left: 10px; right: 60px; top: 11px;
+      width: auto; height: 34px; z-index: 40; background: #f4f5f7;
+    }
+    .topbar.search-open .search-clear { display: block; }
+    /* 窄屏结果面板左右留边（JS 会清空内联 left/width，交给 CSS 控制） */
+    .search-panel { left: 12px; right: 12px; width: auto; max-width: none; }
+    .module-panel { left: auto !important; right: 12px; }
+    .chips { justify-content: flex-start; width: 100%; }
+    table.tbl { min-width: 640px; }
+    /* 标题过长时让副标题另起一行，避免主标题被挤断行 */
+    .card-title { flex-wrap: wrap; row-gap: 2px; }
+    .card-title small { flex: 1 1 100%; }
+  }
+  @media (max-width: 620px) {
+    .stats { grid-template-columns: minmax(0, 1fr); }
+    .stat { padding: 15px 16px; }
+    .stat-value { font-size: 23px; }
+    .card { padding: 16px 14px 14px; }
+    .donut-wrap { flex: 1 1 100%; }
+    .chart-box, .chart-box.tall { height: 240px; }
+    .chart-box.stackbar { height: 300px; }
+  }
+  .mask {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, .35);
+    z-index: 55; display: none;
+  }
+  .mask.show { display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">Z</div>
+      <div>
+        <div class="brand-name">宙斯后台</div>
+        <div class="brand-sub">ZEUS ADMIN</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">数据总览</div>
+      <a class="nav-item active">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.6" y="1.6" width="5" height="5" rx="1.2"/><rect x="9.4" y="1.6" width="5" height="5" rx="1.2"/><rect x="1.6" y="9.4" width="5" height="5" rx="1.2"/><rect x="9.4" y="9.4" width="5" height="5" rx="1.2"/></svg>
+        首页看板
+      </a>
+
+      <div class="nav-group">用户管理</div>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6" cy="5.2" r="2.5"/><path d="M1.6 13.6c0-2.4 2-3.7 4.4-3.7s4.4 1.3 4.4 3.7"/><path d="M10.8 3.3a2.5 2.5 0 0 1 0 4.4"/><path d="M12.3 10.3c1.4.5 2.1 1.5 2.1 3.3"/></svg>
+        会员用户列表
+      </a>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="3.2" r="2"/><circle cx="3.2" cy="12.8" r="2"/><circle cx="12.8" cy="12.8" r="2"/><path d="M8 5.2v3.2M8 8.4l-3.6 2.6M8 8.4l3.6 2.6"/></svg>
+        邀约关系列表
+      </a>
+
+      <div class="nav-group">积分体系</div>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.6" y="3.6" width="12.8" height="9" rx="2"/><path d="M1.6 7h12.8"/><circle cx="11.6" cy="9.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+        积分账户
+      </a>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.2 4.2h11.6M2.2 8h11.6M2.2 11.8h7.4"/></svg>
+        积分流水
+      </a>
+
+      <div class="nav-group">企业服务</div>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6L14 14"/></svg>
+        企业查询
+      </a>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 1.6h5.6l4 4v8.8a1 1 0 0 1-1 1H3.2a1 1 0 0 1-1-1V2.6a1 1 0 0 1 1-1z"/><path d="M8.8 1.6v4h4"/><path d="M5.4 9h5.2M5.4 11.4h3"/></svg>
+        规划报告
+        <span class="nav-dot"></span>
+      </a>
+
+      <div class="nav-group">系统</div>
+      <a class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.6v1.9M8 12.5v1.9M2.3 4.8l1.7 1M12 10.2l1.7 1M2.3 11.2l1.7-1M12 5.8l1.7-1"/></svg>
+        系统设置
+      </a>
+    </nav>
+  </aside>
+  <div class="mask" id="mask"></div>
+
+  <!-- ============ 主区 ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">&#9776;</button>
+      <div class="crumbs"><span>首页</span><i>/</i><b>首页看板</b></div>
+      <div class="top-actions">
+        <div class="search" id="searchBox">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6L14 14" stroke-linecap="round"/></svg>
+          <input id="searchInput" placeholder="搜索租户 / 模块 / 菜单页面" autocomplete="off" />
+          <button class="search-clear" id="searchClear" type="button" aria-label="清除">&#10005;</button>
+        </div>
+        <button class="icon-btn search-trigger" id="searchTrigger" title="搜索">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6L14 14"/></svg>
+        </button>
+        <button class="icon-btn" id="moduleToggle" title="显示 / 隐藏看板模块">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 8s2.4-4.4 6-4.4S14 8 14 8s-2.4 4.4-6 4.4S2 8 2 8z"/><circle cx="8" cy="8" r="1.7"/></svg>
+        </button>
+        <button class="icon-btn" title="通知">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13.4a2 2 0 0 0 4 0"/><path d="M12.6 11H3.4c1-1 1.2-2 1.2-4.6a3.4 3.4 0 0 1 6.8 0c0 2.6.2 3.6 1.2 4.6z"/></svg>
+          <span class="badge"></span>
+        </button>
+        <div class="avatar">朱</div>
+      </div>
+    </header>
+
+    <!-- 全局搜索下拉结果 -->
+    <div class="pop-panel search-panel" id="searchPanel" hidden></div>
+    <!-- 显示 / 隐藏看板模块 -->
+    <div class="pop-panel module-panel" id="modulePanel" hidden>
+      <div class="pop-head">显示 / 隐藏看板模块</div>
+      <div class="pop-list" id="moduleList"></div>
+      <div class="pop-foot">
+        <button class="pop-btn" id="moduleAll">全部显示</button>
+        <span class="pop-tip" id="moduleTip"></span>
+      </div>
+    </div>
+
+    <main class="content">
+      <!-- 所有模块都被隐藏时的提示 -->
+      <div class="empty-tip" id="emptyTip" hidden>
+        所有看板模块均已隐藏。点击右上角
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 8s2.4-4.4 6-4.4S14 8 14 8s-2.4 4.4-6 4.4S2 8 2 8z"/><circle cx="8" cy="8" r="1.7"/></svg>
+        图标重新勾选显示。
+      </div>
+
+      <!-- 顶部指标卡 -->
+      <section class="stats" data-module="stats">
+        <div class="stat">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#4dd4c0,#13c2c2)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 19.2c0-3.3 3.1-5.2 7-5.2s7 1.9 7 5.2"/></svg>
+          </div>
+          <div class="stat-meta">
+            <div class="stat-label">当前在线</div>
+            <div class="stat-value" data-count="21">0</div>
+            <div class="stat-trend"><span class="up">&#9650; 12%</span> 较昨日</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#6aa9ff,#1677ff)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.4" width="12.4" height="14" rx="2"/><path d="M6 8.6h6.4M6 12h6.4"/><path d="M18 9.4a3.6 3.6 0 0 1 0 6.4"/></svg>
+          </div>
+          <div class="stat-meta">
+            <div class="stat-label">注册用户</div>
+            <div class="stat-value" data-count="230">0</div>
+            <div class="stat-trend"><span class="up">&#9650; 8.4%</span> 近 7 天</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#7edc94,#23c343)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="5.4" rx="1.2"/><rect x="2.6" y="15.6" width="6" height="5.4" rx="1.2"/><rect x="15.4" y="15.6" width="6" height="5.4" rx="1.2"/><path d="M12 8.4v3.4M5.6 15.6v-2.2h12.8v2.2"/></svg>
+          </div>
+          <div class="stat-meta">
+            <div class="stat-label">租户入驻</div>
+            <div class="stat-value" data-count="3">0</div>
+            <div class="stat-trend"><span class="up">&#9650; 1</span> 本月新增</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#ff8f8f,#f5222d)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V10.5M10 20V4.5M15 20v-7M20 20v-4.5"/></svg>
+          </div>
+          <div class="stat-meta">
+            <div class="stat-label">累计访问</div>
+            <div class="stat-value" data-count="8988">0</div>
+            <div class="stat-trend"><span class="up">&#9650; 15.6%</span> 近 7 天</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 租户活跃趋势 -->
+      <section class="card" data-module="trend">
+        <div class="card-head stacked">
+          <div class="card-title" id="trendTitle">活跃情况<small id="trendSub">单位：人</small></div>
+          <div class="chips" id="tenantChips"></div>
+        </div>
+        <div class="chart-box tall" id="trendChart"></div>
+        <div class="range-bar">
+          <div class="chips center" id="rangeChips"></div>
+        </div>
+        <div class="hint">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+          点击上方租户标签或下方表格行，可单独查看该租户的活跃曲线
+        </div>
+      </section>
+
+      <!-- 席位构成 -->
+      <section class="card" data-module="seat">
+        <div class="card-head">
+          <div class="card-title">席位构成<small>套餐席位的使用与闲置</small></div>
+          <div class="chips"><span class="chip active" style="cursor:default" id="seatSummary">—</span></div>
+        </div>
+        <div class="seat-legend" id="seatLegend"></div>
+        <div class="tbl-wrap">
+          <table class="tbl static" id="seatTable">
+            <thead>
+              <tr>
+                <th>租户名称</th>
+                <th class="num">总席位</th>
+                <th>席位构成</th>
+                <th class="num">已开通</th>
+                <th class="num">从未登录</th>
+                <th class="num">未开通</th>
+                <th>未登录率</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="hint">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+          已开通 = 管理员 + 已登录员工 + 从未登录；未登录率 = 从未登录 / 已开通，两者均不含未开通席位（未开通 + 从未登录即闲置席位，是续费谈判时最先被压缩的部分）。配色：&lt;10% 绿 / 10–15% 黄 / &gt;15% 红
+        </div>
+      </section>
+
+      <!-- 用户规模 + 续费日历 -->
+      <section class="grid-2">
+        <div class="card" data-module="scale">
+          <div class="card-head">
+            <div class="card-title">用户规模<small>套餐上限 / 实际 / 活跃</small></div>
+            <div class="chips">
+              <span class="chip active" style="cursor:default" id="tenantCountChip">—</span>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl" id="tenantTable">
+              <thead>
+                <tr>
+                  <th>租户名称</th>
+                  <th>套餐数量</th>
+                  <th>实际用户数</th>
+                  <th>活跃用户数</th>
+                  <th>使用率</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" data-module="renew">
+          <div class="card-head">
+            <div class="card-title">续费日历<small>未来 90 天到期</small></div>
+            <div class="chips"><span class="chip active" style="cursor:default" id="renewSummary">—</span></div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl static" id="renewTable">
+              <thead>
+                <tr>
+                  <th>租户名称</th>
+                  <th>套餐</th>
+                  <th>到期日</th>
+                  <th>剩余</th>
+                  <th>MRR</th>
+                  <th>到期判断</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="hint">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            剩余不足 30 天需立即介入；30–60 天结合使用率判断是否可提前续约；使用率 = 活跃用户 / 实际用户
+          </div>
+        </div>
+      </section>
+
+      <!-- 客户来源 + 功能点击 -->
+      <section class="grid-2">
+        <div class="card" data-module="source">
+          <div class="card-head stacked">
+            <div class="card-title">客户来源占比<small id="sourceScope">全部租户 · 整体</small></div>
+            <div class="chips" id="sourceChips"></div>
+          </div>
+          <div class="donut-flex">
+            <div class="donut-wrap">
+              <div id="sourceChart"></div>
+              <div class="donut-center"><b id="sourceTotal">0</b><span id="sourceTotalLabel">客户总量</span></div>
+            </div>
+            <div class="legend-list" id="sourceLegend"></div>
+          </div>
+          <div class="hint" id="sourceHint" hidden>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            <span id="sourceHintText"></span>
+          </div>
+        </div>
+
+        <div class="card" data-module="feature">
+          <div class="card-head stacked">
+            <div class="card-title">菜单分析<small id="featureScope">全部租户 · 近 7 天累计</small></div>
+            <div class="chips" id="featureChips"></div>
+          </div>
+          <div class="chart-box stackbar" id="featureChart"></div>
+          <div class="hint">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            每根柱体是一个一级菜单，段高为该菜单下各细分页面的点击量；鼠标移至柱体可查看明细
+          </div>
+        </div>
+      </section>
+
+      <!-- 拓客空间 + 税票采集 额度使用情况 -->
+      <section class="grid-2">
+        <div class="card" data-module="claim">
+          <div class="card-head">
+            <div class="card-title">拓客空间 · 数据认领<small>按套餐额度统计，单位：条</small></div>
+            <div class="chips"><span class="chip active" style="cursor:default" id="claimSummary">—</span></div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl static" id="claimTable">
+              <thead>
+                <tr>
+                  <th>租户名称</th>
+                  <th>套餐数量</th>
+                  <th>实际认领数量</th>
+                  <th>认领余量</th>
+                  <th>使用率</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" data-module="collect">
+          <div class="card-head">
+            <div class="card-title">税票采集<small>按套餐额度统计，单位：家</small></div>
+            <div class="chips"><span class="chip active" style="cursor:default" id="collectSummary">—</span></div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl static" id="collectTable">
+              <thead>
+                <tr>
+                  <th>租户名称</th>
+                  <th>套餐数量</th>
+                  <th>实际采集数量</th>
+                  <th>采集余量</th>
+                  <th>使用率</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="./libs/echarts.min.js"></script>
+<script>
+  /* ================= 数据 ================= */
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+  // 租户专用色板，顺序与 TENANTS 一致：融查查科技=橙、二号企服=绿、融享惠=蓝
+  const TENANT_COLORS = ['#f59e0b', '#10b981', '#3b82f6'];
+  // 活跃情况的时间范围选项：gran 决定采样粒度，points 决定坐标点数
+  const RANGES = [
+    { key: '7d', label: '近7天',   gran: 'day',   points: 7,  seed: 11 },
+    { key: '1m', label: '近1个月', gran: 'day',   points: 30, seed: 23 },
+    { key: '6m', label: '近半年',  gran: 'month', points: 6,  seed: 53 },
+    { key: '1y', label: '近一年',  gran: 'month', points: 12, seed: 71 }
+  ];
+
+  // 字段说明：max=套餐最大可开用户数，users=实际用户数，active=活跃用户数
+  // src 顺序固定为 [EC同步, 用户创建, 拓客空间, Excel导入]，四项之和 = users
+  // 注：EC同步仅融查查科技开通，另两家为 0，环形图与图例中会隐藏值为 0 的来源
+  // claim=套餐数量(可认领额度)，claimed=实际认领数量；collect=套餐数量(可采集额度)，collected=实际采集数量
+  // feat 顺序固定为 [首页, 客户管理, 拓客空间, 产品管理, 我的]，各租户同一列之和 = FEATURES 中该模块的 value
+  const TENANTS = [
+    { name: '融查查科技', max: 300, users: 128, active: 76, src: [53, 34, 26, 15], claim: 1000, claimed: 786, collect: 200, collected: 190, feat: [6940, 4800, 2900, 2050, 1190], series: [58, 63, 61, 69, 72, 65, 76],
+      admins: 6, neverLogin: 12, plan: '旗舰版', mrr: 38000, renew: '2026-11-30', owner: '张敏' },
+    { name: '二号企服',   max: 100, users: 68,  active: 41, src: [0, 30, 24, 14],  claim: 600,  claimed: 415, collect: 120, collected: 78,  feat: [3690, 2550, 1540, 1090, 634],  series: [28, 32, 30, 35, 37, 34, 41],
+      admins: 3, neverLogin: 6, plan: '专业版', mrr: 26000, renew: '2026-12-15', owner: '李伟' },
+    { name: '融享惠',     max: 40,  users: 34,  active: 21, src: [0, 16, 11, 7],   claim: 300,  claimed: 285, collect: 60,  collected: 19,  feat: [1850, 1282, 778,  554,  321],  series: [12, 15, 14, 17, 18, 16, 21],
+      admins: 2, neverLogin: 16, plan: '基础版', mrr: 12000, renew: '2026-10-31', owner: '张敏' }
+  ];
+
+  const SOURCES = [
+    { name: 'EC同步',    color: '#3b82f6' },
+    { name: '用户创建',  color: '#10b981' },
+    { name: '拓客空间',  color: '#f59e0b' },
+    { name: 'Excel导入', color: '#8b5cf6' }
+  ];
+
+  const TOTAL_CUSTOMERS = TENANTS.reduce((s, t) => s + t.users, 0); // 230
+
+  // 每个功能模块为一个整体，children 为该模块内细分页面的点击量，children 之和 = 模块 value
+  const FEATURES = [
+    { name: '首页', value: 12480, children: [
+      { name: '征信网点',   value: 3862 },
+      { name: '贷款计算器', value: 3415 },
+      { name: '在线查税',   value: 2476 },
+      { name: '社保查询',   value: 1483 },
+      { name: '公积金查询', value: 1244 }
+    ]},
+    { name: '客户管理', value: 8632, children: [
+      { name: '客户列表', value: 3241 },
+      { name: '客户详情', value: 2158 },
+      { name: '跟进记录', value: 1496 },
+      { name: '标签管理', value: 984 },
+      { name: '数据认领', value: 753 }
+    ]},
+    { name: '拓客空间', value: 5218, children: [
+      { name: '拓客海报',   value: 1876 },
+      { name: '邀请二维码', value: 1342 },
+      { name: '线索池',     value: 968 },
+      { name: '分享记录',   value: 732 },
+      { name: '拓客排行',   value: 300 }
+    ]},
+    { name: '产品管理', value: 3694, children: [
+      { name: '产品列表',   value: 1241 },
+      { name: '产品详情',   value: 836 },
+      { name: '方案配置',   value: 728 },
+      { name: '订单管理',   value: 609 },
+      { name: '产品上下架', value: 280 }
+    ]},
+    { name: '我的', value: 2145, children: [
+      { name: '个人资料', value: 682 },
+      { name: '积分账户', value: 574 },
+      { name: '税务券',   value: 431 },
+      { name: '消息中心', value: 286 },
+      { name: '设置',     value: 172 }
+    ]}
+  ];
+  const FEATURE_TOTAL = FEATURES.reduce((s, f) => s + f.value, 0); // 32,169
+
+  // 柱体内每一段对应模块下的一个细分页面，按位置取色（最多 5 段）
+  const FEATURE_COLORS = ['#1677ff', '#36cfc9', '#8b5cf6', '#f5a623', '#94a3b8'];
+  const FEATURE_SEGMENTS = Math.max.apply(null, FEATURES.map(f => f.children.length)); // 5
+  // 每个模块内各细分页面的占比，用于把「该租户该模块的点击量」按比例拆到细分页面
+  const FEATURE_RATIO = FEATURES.map(f => f.children.map(c => c.value / f.value));
+
+  /* ================= 图表实例 ================= */
+  const charts = [];
+  let trendChart, sourceChart, featureChart;
+  let activeTenant = -1; // 趋势图：-1 表示全部租户
+  let activeRange = RANGES[0]; // 活跃情况的时间范围
+  let activeSource = -1; // 客户来源：-1 表示整体
+  let activeFeature = -1; // 功能点击：-1 表示全部租户
+
+  function initChart(el, option) {
+    const c = echarts.init(el);
+    c.setOption(option);
+    charts.push(c);
+    return c;
+  }
+  let lastNarrow = window.innerWidth < 640;
+  window.addEventListener('resize', () => {
+    charts.forEach(c => c.resize());
+    const narrow = window.innerWidth < 640;
+    if (narrow !== lastNarrow) {
+      lastNarrow = narrow;
+      trendChart.setOption(trendOption(activeTenant), { notMerge: true });
+      featureChart.setOption(featureOption(activeFeature), { notMerge: true });
+    }
+  });
+
+  /* ================= 活跃情况：时间范围数据与坐标 ================= */
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtDay(d) { return pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
+  function fmtMonth(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
+
+  // 按粒度生成 X 轴标签，末端为当前日期
+  function rangeLabels(cfg) {
+    const out = [];
+    const now = new Date();
+    for (let i = cfg.points - 1; i >= 0; i--) {
+      let d;
+      if (cfg.gran === 'month') {
+        d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      } else {
+        d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        d.setDate(d.getDate() - i);
+      }
+      out.push(cfg.gran === 'month' ? fmtMonth(d) : fmtDay(d));
+    }
+    return out;
+  }
+
+  // 固定种子的伪随机，保证同一租户同一范围每次渲染结果一致
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  const START_RATIO = { '1m': 0.82, '6m': 0.5, '1y': 0.34 };
+  const seriesCache = {};
+
+  function buildSeries(ti, cfg) {
+    if (cfg.key === '7d') return TENANTS[ti].series.slice(); // 近7天沿用预设数据
+    const end = TENANTS[ti].active;
+    const start = Math.max(1, Math.round(end * START_RATIO[cfg.key]));
+    const rnd = mulberry32(1000 + ti * 97 + cfg.seed);
+    const n = cfg.points;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const p = n > 1 ? i / (n - 1) : 1;
+      const v = start + (end - start) * p          // 缓慢增长的趋势线
+        + Math.sin(p * Math.PI * 3.1) * end * 0.05 // 周期波动
+        + (rnd() - 0.5) * end * 0.1;               // 小幅噪声
+      out.push(i === n - 1 ? end : Math.max(1, Math.round(v)));
+    }
+    return out;
+  }
+
+  // 缓存，避免切换租户 / 缩放窗口时数值跳变
+  function tenantSeries(ti, cfg) {
+    const k = ti + '_' + cfg.key;
+    if (!seriesCache[k]) seriesCache[k] = buildSeries(ti, cfg);
+    return seriesCache[k];
+  }
+
+  /* ================= 趋势图 ================= */
+  function trendOption(idx) {
+    const isAll = idx < 0;
+    const list = isAll
+      ? TENANTS.map((t, i) => ({ t, i }))
+      : [{ t: TENANTS[idx], i: idx }];
+
+    const series = list.map(({ t, i }) => ({
+      name: t.name,
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: isAll ? 5 : 8,
+      showSymbol: true,
+      z: isAll ? 2 : 5,
+      lineStyle: { width: isAll ? 2 : 3, color: TENANT_COLORS[i] },
+      itemStyle: { color: TENANT_COLORS[i], borderColor: '#fff', borderWidth: isAll ? 0 : 2 },
+      emphasis: { focus: 'series', lineStyle: { width: 3 } },
+      areaStyle: isAll ? undefined : {
+        opacity: .22,
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: TENANT_COLORS[i] },
+          { offset: 1, color: 'rgba(255,255,255,0)' }
+        ])
+      },
+      data: tenantSeries(i, activeRange)
+    }));
+
+    const narrow = window.innerWidth < 640;
+    return {
+      color: TENANT_COLORS,
+      // 末端分类标签居中于轴端，需预留半个标签宽的余量，避免最后一个月份被裁切
+      grid: { left: 4, right: activeRange.gran === 'month' ? 34 : 20, top: 20, bottom: 4, containLabel: true },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(255,255,255,.97)',
+        borderColor: '#e5e8ef',
+        borderWidth: 1,
+        padding: [10, 14],
+        textStyle: { color: '#1d2129', fontSize: 12 },
+        extraCssText: 'box-shadow:0 6px 20px rgba(29,33,41,.12);border-radius:8px;',
+        axisPointer: { type: 'line', lineStyle: { color: '#c9d6e8', type: 'dashed' } },
+        valueFormatter: v => v + ' 人'
+      },
+      // 图例移到租户标签前的色块上，图表内不再显示
+      legend: { show: false },
+      xAxis: {
+        type: 'category', boundaryGap: false, data: rangeLabels(activeRange),
+        axisLine: { lineStyle: { color: '#e5e8ef' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#86909c', fontSize: narrow ? 10 : 12, hideOverlap: true }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: '#f2f4f7' } },
+        axisLabel: { color: '#86909c', fontSize: 12 },
+        minInterval: 1
+      },
+      series
+    };
+  }
+
+  /* ================= 进度条配色（全站统一） ================= */
+  // ① 使用率 / 到期进度等「越接近上限越紧张」的指标：< 70% 绿｜70%–80% 黄｜> 80% 红
+  function barColor(v) {
+    return v > 80 ? '#f5222d' : v >= 70 ? '#faad14' : '#23c343';
+  }
+  // ② 未登录率等「越低越好」的指标，方向与上面相反：< 10% 绿｜10%–15% 黄｜> 15% 红
+  function badColor(v) {
+    return v > 15 ? '#f5222d' : v >= 10 ? '#faad14' : '#23c343';
+  }
+
+  /* ================= 表格 ================= */
+  function renderTable() {
+    document.getElementById('tenantCountChip').textContent = '共 ' + TENANTS.length + ' 个租户';
+    const tb = document.querySelector('#tenantTable tbody');
+    tb.innerHTML = TENANTS.map((t, i) => {
+      const rate = Math.round(t.users / t.max * 100);
+      const color = barColor(rate);
+      return '<tr data-idx="' + i + '">' +
+        '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
+        '<td class="num">' + t.max + '</td>' +
+        '<td class="num strong">' + t.users + '</td>' +
+        '<td class="num">' + t.active + '</td>' +
+        '<td><div class="rate"><div class="mini-bar"><i style="width:' + rate + '%;background:' + color + '"></i></div><span>' + rate + '%</span></div></td>' +
+        '</tr>';
+    }).join('');
+
+    tb.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => {
+        const i = Number(tr.dataset.idx);
+        selectTenant(activeTenant === i ? -1 : i);
+      });
+    });
+  }
+
+  /* ================= 席位构成 ================= */
+  const TODAY = '2026-10-14';
+  const SEAT_SEGS = [
+    { n: '管理员', c: '#1677ff' },
+    { n: '已登录员工', c: '#7aa7e8' },
+    { n: '从未登录', c: '#f59e0b' },
+    { n: '未开通', c: '#e5e6eb' }
+  ];
+  // 四段构成：管理员 / 已登录员工 / 从未登录 / 未开通，四段之和恒等于套餐席位数
+  function seatParts(t) {
+    const logged = t.users - t.neverLogin;
+    return [
+      { v: t.admins, c: '#1677ff' },
+      { v: logged - t.admins, c: '#7aa7e8' },
+      { v: t.neverLogin, c: '#f59e0b' },
+      { v: t.max - t.users, c: '#e5e6eb' }
+    ];
+  }
+  // 构成条：每段都输出数字；渲染后由 fitSeatLabels 把放不下的数字移到段外侧
+  function seatStack(parts, base) {
+    return parts.map(p => {
+      const w = p.v / base * 100;
+      return '<i data-v="' + p.v + '" style="width:' + w + '%;background:' + p.c +
+        (p.c === '#e5e6eb' ? ';color:#4e5969' : '') + '">' + p.v + '</i>';
+    }).join('');
+  }
+  // 段宽装不下数字时（按位数估算所需宽度），给该段一个最小宽度，保证数字始终显示在段内
+  function fitSeatLabels() {
+    document.querySelectorAll('#seatTable .seat-stack').forEach(stack => {
+      const segs = [...stack.children];
+      if (!stack.offsetWidth) return; // 模块被隐藏时不计算
+      segs.forEach(el => { el.style.minWidth = ''; });
+      segs.forEach(el => {
+        const need = String(el.getAttribute('data-v') || '').length * 7 + 6;
+        if (el.offsetWidth < need) el.style.minWidth = need + 'px';
+      });
+    });
+  }
+  function renderSeat() {
+    document.getElementById('seatLegend').innerHTML = SEAT_SEGS.map(s =>
+      '<span class="lg"><i style="background:' + s.c + '"></i>' + s.n + '</span>').join('');
+
+    let total = 0, actSum = 0, neverSum = 0, unopenSum = 0;
+    const tb = document.querySelector('#seatTable tbody');
+    tb.innerHTML = TENANTS.map((t, i) => {
+      const logged = t.users - t.neverLogin;
+      const unopened = t.max - t.users;
+      // 已开通 = 管理员 + 已登录员工 + 从未登录；未登录率 = 从未登录 / 已开通，未开通席位不计入分母
+      const rate = Math.round(t.neverLogin / t.users * 100);
+      total += t.max; actSum += logged; neverSum += t.neverLogin; unopenSum += unopened;
+      const color = badColor(rate);
+      return '<tr>' +
+        '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
+        '<td class="num strong">' + t.max + '</td>' +
+        '<td><div class="seat-cell"><div class="seat-stack">' + seatStack(seatParts(t), t.max) + '</div></div></td>' +
+        '<td class="num strong">' + t.users + '</td>' +
+        '<td class="num">' + t.neverLogin + '</td>' +
+        '<td class="num">' + unopened + '</td>' +
+        '<td><div class="rate"><div class="mini-bar"><i style="width:' + rate + '%;background:' + color + '"></i></div><span>' + rate + '%</span></div></td>' +
+        '</tr>';
+    }).join('') + (function () {
+      // 合计行同口径：分子 = 三家从未登录之和，分母 = 三家已开通之和（不含未开通席位）
+      const openedSum = actSum + neverSum;
+      const rate = Math.round(neverSum / openedSum * 100);
+      const all = { admins: TENANTS.reduce((s, t) => s + t.admins, 0), users: actSum + neverSum, neverLogin: neverSum, max: total };
+      return '<tr style="background:#fafbfc">' +
+        '<td><b>合计</b></td>' +
+        '<td class="num strong">' + total + '</td>' +
+        '<td><div class="seat-cell"><div class="seat-stack">' + seatStack(seatParts(all), total) + '</div></div></td>' +
+        '<td class="num strong">' + openedSum + '</td>' +
+        '<td class="num">' + neverSum + '</td>' +
+        '<td class="num">' + unopenSum + '</td>' +
+        '<td><div class="rate"><div class="mini-bar"><i style="width:' + rate + '%;background:' + badColor(rate) + '"></i></div><span>' + rate + '%</span></div></td>' +
+        '</tr>';
+    })();
+    fitSeatLabels();
+    document.getElementById('seatSummary').textContent =
+      '共 ' + total + ' 席 · 闲置 ' + (neverSum + unopenSum) + ' 席';
+  }
+
+  /* ================= 续费日历 ================= */
+  function daysLeft(d) {
+    return Math.round((new Date(d + 'T00:00:00') - new Date(TODAY + 'T00:00:00')) / 86400000);
+  }
+  function renderRenew() {
+    const rows = TENANTS.map((t, i) => ({ t: t, i: i }))
+      .sort((a, b) => new Date(a.t.renew) - new Date(b.t.renew));
+    const totalMrr = TENANTS.reduce((s, t) => s + t.mrr, 0);
+    const tb = document.querySelector('#renewTable tbody');
+    tb.innerHTML = rows.map(({ t, i }) => {
+      const d = daysLeft(t.renew);
+      const use = Math.round(t.active / t.users * 100);
+      let tag, cls;
+      if (d < 30) { tag = '即将到期'; cls = 'red'; }
+      else if (d <= 60) { tag = use >= 55 ? '可提前续约' : '需先复盘'; cls = use >= 55 ? 'green' : 'orange'; }
+      else { tag = '观察中'; cls = 'gray'; }
+      // 进度条 = 到期倒计时已消耗比例（越小剩余的越少），配色与全站进度条一致
+      const barW = Math.max(4, Math.min(100, (90 - d) / 90 * 100));
+      const dc = barColor(barW);
+      return '<tr>' +
+        '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
+        '<td>' + t.plan + '</td>' +
+        '<td class="num">' + t.renew + '</td>' +
+        '<td><div class="rate"><div class="mini-bar"><i style="width:' + barW.toFixed(0) + '%;background:' + dc + '"></i></div>' +
+          '<span style="color:' + dc + '">' + d + '天</span></div></td>' +
+        '<td class="num strong">¥' + t.mrr.toLocaleString() + '</td>' +
+        '<td><span class="rtag ' + cls + '">' + tag + '</span></td>' +
+        '</tr>';
+    }).join('');
+    document.getElementById('renewSummary').textContent =
+      '合计 ¥' + totalMrr.toLocaleString() + ' / 月 · ARR ¥' + (totalMrr * 12).toLocaleString();
+  }
+
+  /* ================= 时间范围切换 ================= */
+  function renderRangeChips() {
+    const box = document.getElementById('rangeChips');
+    box.innerHTML = RANGES.map((r, i) =>
+      '<span class="chip' + (i === 0 ? ' active' : '') + '" data-key="' + r.key + '">' + r.label + '</span>'
+    ).join('');
+    box.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => selectRange(c.dataset.key));
+    });
+  }
+
+  function selectRange(key) {
+    activeRange = RANGES.find(r => r.key === key) || RANGES[0];
+    document.querySelectorAll('#rangeChips .chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.key === activeRange.key);
+    });
+    updateTrendHead();
+    trendChart.setOption(trendOption(activeTenant), { notMerge: true });
+  }
+
+  function updateTrendHead() {
+    const titleEl = document.getElementById('trendTitle');
+    const subEl = document.getElementById('trendSub');
+    const prefix = activeRange.label + ' · ';
+    if (activeTenant < 0) {
+      titleEl.firstChild.nodeValue = '活跃情况';
+      subEl.textContent = prefix + '单位：人';
+    } else {
+      const t = TENANTS[activeTenant];
+      titleEl.firstChild.nodeValue = t.name + ' · 活跃情况';
+      subEl.textContent = prefix + '活跃用户 ' + t.active + ' 人 / 实际用户 ' + t.users + ' 人';
+    }
+  }
+
+  /* ================= 租户切换 ================= */
+  function renderChips() {
+    const box = document.getElementById('tenantChips');
+    let html = '<span class="chip active" data-idx="-1">全部租户</span>';
+    TENANTS.forEach((t, i) => {
+      html += '<span class="chip" data-idx="' + i + '">' +
+        '<i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span>';
+    });
+    box.innerHTML = html;
+    box.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => selectTenant(Number(c.dataset.idx)));
+    });
+  }
+
+  function selectTenant(idx) {
+    activeTenant = idx;
+    document.querySelectorAll('#tenantChips .chip').forEach(c => {
+      c.classList.toggle('active', Number(c.dataset.idx) === idx);
+    });
+    document.querySelectorAll('#tenantTable tbody tr').forEach(tr => {
+      tr.classList.toggle('active', Number(tr.dataset.idx) === idx);
+    });
+
+    updateTrendHead();
+    trendChart.setOption(trendOption(idx), { notMerge: true });
+  }
+
+  /* ================= 客户来源 ================= */
+  // idx = -1 取全部租户（整体），其余取该租户
+  function sourceValues(idx) {
+    return SOURCES.map((s, i) => ({
+      name: s.name,
+      color: s.color,
+      value: idx < 0
+        ? TENANTS.reduce((sum, t) => sum + t.src[i], 0)
+        : TENANTS[idx].src[i]
+    })).filter(d => d.value > 0); // 该租户未开通的来源数量为 0，不参与展示与占比计算
+  }
+
+  function renderSourceChips() {
+    const box = document.getElementById('sourceChips');
+    let html = '<span class="chip active" data-idx="-1">全部租户</span>';
+    TENANTS.forEach((t, i) => {
+      html += '<span class="chip" data-idx="' + i + '">' + t.name + '</span>';
+    });
+    box.innerHTML = html;
+    box.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => renderSource(Number(c.dataset.idx)));
+    });
+  }
+
+  function renderSource(idx) {
+    activeSource = idx;
+    const data = sourceValues(idx);
+    const total = data.reduce((s, x) => s + x.value, 0);
+
+    document.getElementById('sourceTotal').textContent = total;
+    document.getElementById('sourceTotalLabel').textContent = idx < 0 ? '客户总量' : '客户数';
+    document.getElementById('sourceScope').textContent = idx < 0
+      ? '全部租户 · 整体'
+      : TENANTS[idx].name + ' · 占全部客户 ' + (total / TOTAL_CUSTOMERS * 100).toFixed(1) + '%';
+
+    sourceChart.setOption({
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(255,255,255,.97)',
+        borderColor: '#e5e8ef',
+        borderWidth: 1,
+        textStyle: { color: '#1d2129', fontSize: 12 },
+        extraCssText: 'box-shadow:0 6px 20px rgba(29,33,41,.12);border-radius:8px;',
+        formatter: p => {
+          const line = p.name + '：' + p.value + ' 个（' + p.percent + '%）';
+          return idx < 0
+            ? line
+            : line + '<br/>占全部客户 ' + (p.value / TOTAL_CUSTOMERS * 100).toFixed(1) + '%';
+        }
+      },
+      series: [{
+        type: 'pie',
+        radius: ['62%', '86%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderColor: '#fff', borderWidth: 3, borderRadius: 5 },
+        label: { show: false },
+        labelLine: { show: false },
+        emphasis: { scale: true, scaleSize: 6 },
+        data: data.map(d => ({ name: d.name, value: d.value, itemStyle: { color: d.color } }))
+      }]
+    }, { replaceMerge: ['series'] });
+
+    document.getElementById('sourceLegend').innerHTML = data.map(d => {
+      const pct = (d.value / total * 100).toFixed(1);
+      return '<div class="legend-item">' +
+        '<i class="dot" style="background:' + d.color + '"></i>' +
+        '<span class="legend-name">' + d.name + '</span>' +
+        '<span class="legend-val">' + d.value + '</span>' +
+        '<span class="legend-pct">' + pct + '%</span>' +
+        '</div>';
+    }).join('');
+
+    // 未开通的来源（数量为 0）不展示，给出说明
+    const hidden = SOURCES.map((s, i) => ({
+      name: s.name,
+      value: idx < 0 ? TENANTS.reduce((sum, t) => sum + t.src[i], 0) : TENANTS[idx].src[i]
+    })).filter(d => d.value === 0).map(d => d.name);
+    const hint = document.getElementById('sourceHint');
+    if (hidden.length) {
+      document.getElementById('sourceHintText').textContent =
+        (idx < 0 ? '以下来源当前无数据' : '该租户未开通以下来源') + '（数量为 0）：' +
+        hidden.join('、') + '，已在图表中隐藏';
+      hint.hidden = false;
+    } else {
+      hint.hidden = true;
+    }
+
+    document.querySelectorAll('#sourceChips .chip').forEach(c => {
+      c.classList.toggle('active', Number(c.dataset.idx) === idx);
+    });
+
+  }
+
+  /* ========== 拓客空间 · 数据认领 / 税票采集 额度使用情况 ========== */
+  // 额度使用率同属「越接近上限越紧张」，统一按 70 / 80 阈值取色
+  function renderUsage() {
+    const fill = (tableId, limitKey, usedKey) => {
+      const tb = document.querySelector('#' + tableId + ' tbody');
+      tb.innerHTML = TENANTS.map((t, i) => {
+        const limit = t[limitKey], used = t[usedKey], left = limit - used;
+        const rate = Math.round(used / limit * 100);
+        return '<tr data-idx="' + i + '">' +
+          '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
+          '<td class="num">' + limit.toLocaleString() + '</td>' +
+          '<td class="num strong">' + used.toLocaleString() + '</td>' +
+          '<td class="num">' + left.toLocaleString() + '</td>' +
+          '<td><div class="rate"><div class="mini-bar"><i style="width:' + rate + '%;background:' +
+            barColor(rate) + '"></i></div><span>' + rate + '%</span></div></td>' +
+          '</tr>';
+      }).join('');
+    };
+
+    fill('claimTable', 'claim', 'claimed');
+    fill('collectTable', 'collect', 'collected');
+
+    const sum = (limitKey, usedKey) => {
+      const limit = TENANTS.reduce((s, t) => s + t[limitKey], 0);
+      const used = TENANTS.reduce((s, t) => s + t[usedKey], 0);
+      return { limit: limit, used: used, left: limit - used };
+    };
+    const c1 = sum('claim', 'claimed');
+    const c2 = sum('collect', 'collected');
+
+    document.getElementById('claimSummary').textContent =
+      '合计套餐数量 ' + c1.limit.toLocaleString() + ' 条 · 已认领 ' + c1.used.toLocaleString() +
+      ' 条 · 余量 ' + c1.left.toLocaleString() + ' 条';
+    document.getElementById('collectSummary').textContent =
+      '合计套餐数量 ' + c2.limit.toLocaleString() + ' 家 · 已采集 ' + c2.used.toLocaleString() +
+      ' 家 · 余量 ' + c2.left.toLocaleString() + ' 家';
+  }
+
+  /* ===== 菜单分析：堆叠柱（一根柱 = 一个一级菜单，段 = 细分页面） ===== */
+  // 按比例把整数 total 拆成整数份（最大余数法），保证各项之和严格等于 total
+  function splitByRatio(total, ratios) {
+    const raw = ratios.map(r => total * r);
+    const out = raw.map(v => Math.floor(v));
+    const rest = total - out.reduce((s, v) => s + v, 0);
+    raw.map((v, i) => ({ i: i, frac: v - Math.floor(v) }))
+      .sort((a, b) => b.frac - a.frac)
+      .forEach((x, k) => { if (k < rest) out[x.i] += 1; });
+    return out;
+  }
+
+  // 返回 matrix[模块][细分页面]，全部租户时直接取明细，指定租户时按占比拆分
+  function featureMatrix(tIdx) {
+    if (tIdx < 0) return FEATURES.map(f => f.children.map(c => c.value));
+    return FEATURES.map((f, m) => splitByRatio(TENANTS[tIdx].feat[m], FEATURE_RATIO[m]));
+  }
+
+  function featureOption(tIdx) {
+    const isAll = tIdx < 0;
+    const narrow = window.innerWidth < 640;
+    const matrix = featureMatrix(tIdx);
+    const totals = matrix.map(col => col.reduce((s, v) => s + v, 0));
+    const grand = totals.reduce((s, v) => s + v, 0);
+
+    const series = [];
+    for (let c = 0; c < FEATURE_SEGMENTS; c++) {
+      const isTop = c === FEATURE_SEGMENTS - 1;
+      series.push({
+        type: 'bar',
+        stack: 'click',
+        barWidth: narrow ? '50%' : '38%',
+        itemStyle: {
+          color: FEATURE_COLORS[c % FEATURE_COLORS.length],
+          borderColor: 'rgba(255,255,255,.85)',
+          borderWidth: 1,
+          borderRadius: isTop ? [5, 5, 0, 0] : 0
+        },
+        emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(29,33,41,.18)' } },
+        label: isTop ? {
+          show: true, position: 'top', color: '#4e5969',
+          fontSize: 12, fontWeight: 600,
+          formatter: p => totals[p.dataIndex].toLocaleString()
+        } : { show: false },
+        // 每个数据项自带页面名，供 tooltip 逐段展示
+        data: FEATURES.map((f, m) => ({
+          name: f.children[c] ? f.children[c].name : '—',
+          value: matrix[m][c] || 0
+        }))
+      });
+    }
+
+    return {
+      grid: { left: 4, right: 16, top: 34, bottom: 4, containLabel: true },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(22,119,255,.06)' } },
+        backgroundColor: 'rgba(255,255,255,.97)',
+        borderColor: '#e5e8ef',
+        borderWidth: 1,
+        textStyle: { color: '#1d2129', fontSize: 12 },
+        extraCssText: 'box-shadow:0 6px 20px rgba(29,33,41,.12);border-radius:8px;',
+        formatter: params => {
+          if (!params || !params.length) return '';
+          const m = params[0].dataIndex;
+          const total = totals[m];
+          const rows = params.filter(p => p.value > 0).sort((a, b) => b.value - a.value);
+          let html = '<b>' + FEATURES[m].name + '</b> · 共 ' + total.toLocaleString() + ' 次<br/>';
+          rows.forEach(p => {
+            html += p.marker + p.data.name + ' ' + p.value.toLocaleString() + ' 次 · ' +
+              (p.value / total * 100).toFixed(1) + '%<br/>';
+          });
+          html += '<span style="color:#86909c">占' +
+            (isAll ? '全部功能' : '该租户全部功能') + ' ' +
+            (total / grand * 100).toFixed(1) + '%</span>';
+          return html;
+        }
+      },
+      xAxis: {
+        type: 'category',
+        data: FEATURES.map(f => f.name),
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: '#e5e8ef' } },
+        axisLabel: { color: '#4e5969', interval: 0, fontSize: narrow ? 10 : 12 }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: '#f2f4f7' } },
+        axisLabel: { color: '#86909c', fontSize: 12 }
+      },
+      series: series
+    };
+  }
+
+  function renderFeatureChips() {
+    const box = document.getElementById('featureChips');
+    let html = '<span class="chip active" data-idx="-1">全部租户</span>';
+    TENANTS.forEach((t, i) => {
+      html += '<span class="chip" data-idx="' + i + '">' + t.name + '</span>';
+    });
+    box.innerHTML = html;
+    box.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => selectFeature(Number(c.dataset.idx)));
+    });
+  }
+
+  function selectFeature(idx) {
+    activeFeature = idx;
+    document.querySelectorAll('#featureChips .chip').forEach(c => {
+      c.classList.toggle('active', Number(c.dataset.idx) === idx);
+    });
+
+    const sub = document.getElementById('featureScope');
+    if (idx < 0) {
+      sub.textContent = '全部租户 · 近 7 天累计 ' + FEATURE_TOTAL.toLocaleString() + ' 次';
+    } else {
+      const t = TENANTS[idx];
+      const total = t.feat.reduce((s, v) => s + v, 0);
+      sub.textContent = t.name + ' · 近 7 天累计 ' + total.toLocaleString() + ' 次 · 占全部 ' +
+        (total / FEATURE_TOTAL * 100).toFixed(1) + '%';
+    }
+
+    featureChart.setOption(featureOption(idx), { notMerge: true });
+  }
+
+  function initFeature() {
+    featureChart = initChart(document.getElementById('featureChart'), featureOption(-1));
+  }
+
+  /* ================= 数字滚动 ================= */
+  function countUp() {
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const target = Number(el.dataset.count);
+      const dur = 900, start = performance.now();
+      (function step(now) {
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      })(start);
+    });
+  }
+
+  /* ================= 移动端侧边栏 ================= */
+  const sidebar = document.getElementById('sidebar');
+  const mask = document.getElementById('mask');
+  document.getElementById('hamburger').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    mask.classList.toggle('show');
+  });
+  mask.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    mask.classList.remove('show');
+  });
+
+  /* ================= 看板模块：显示 / 隐藏 ================= */
+  const MODULES = [
+    { key: 'stats',   name: '核心指标',            desc: '当前在线 / 注册用户 / 租户入驻 / 累计访问' },
+    { key: 'trend',   name: '活跃情况',            desc: '各租户活跃曲线 + 时间范围切换' },
+    { key: 'seat',    name: '席位构成',            desc: '总席位 / 席位构成 / 已开通 / 从未登录 / 未开通 / 未登录率' },
+    { key: 'scale',   name: '用户规模',            desc: '套餐数量 / 实际用户 / 活跃用户 / 使用率' },
+    { key: 'renew',   name: '续费日历',            desc: '到期日 / 剩余天数 / MRR / 到期判断' },
+    { key: 'source',  name: '客户来源占比',        desc: 'EC同步 / 用户创建 / 拓客空间 / Excel导入' },
+    { key: 'feature', name: '菜单分析',            desc: '五个一级菜单及细分页面的点击量' },
+    { key: 'claim',   name: '拓客空间 · 数据认领', desc: '套餐数量 / 已认领 / 认领余量' },
+    { key: 'collect', name: '税票采集',            desc: '套餐数量 / 已采集 / 采集余量' }
+  ];
+  const LS_KEY = 'zeus.dashboard.hiddenModules';
+  let hidden = new Set();
+  try { hidden = new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); } catch (e) { hidden = new Set(); }
+
+  const moduleEl = key => document.querySelector('[data-module="' + key + '"]');
+
+  function applyModules() {
+    MODULES.forEach(m => {
+      const el = moduleEl(m.key);
+      if (el) el.classList.toggle('is-hidden', hidden.has(m.key));
+    });
+    // 两列栅格只剩一张卡时改为单列，避免出现半宽空位
+    document.querySelectorAll('.grid-2').forEach(g => {
+      const visible = [...g.children].filter(c => !c.classList.contains('is-hidden')).length;
+      g.style.gridTemplateColumns = visible === 1 ? 'minmax(0, 1fr)' : '';
+    });
+    document.getElementById('emptyTip').hidden = !MODULES.every(m => hidden.has(m.key));
+    document.getElementById('moduleToggle').classList.toggle('on', hidden.size > 0);
+    document.getElementById('moduleTip').textContent =
+      hidden.size ? '已隐藏 ' + hidden.size + ' 个模块' : '全部显示中';
+    fitSeatLabels();
+    try { localStorage.setItem(LS_KEY, JSON.stringify([...hidden])); } catch (e) {}
+  }
+
+  function renderModuleList() {
+    const box = document.getElementById('moduleList');
+    box.innerHTML = MODULES.map(m =>
+      '<label class="pop-row">' +
+        '<input type="checkbox" data-key="' + m.key + '"' + (hidden.has(m.key) ? '' : ' checked') + '>' +
+        '<span>' + m.name + '</span>' +
+      '</label>'
+    ).join('');
+    box.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        if (inp.checked) hidden.delete(inp.dataset.key); else hidden.add(inp.dataset.key);
+        applyModules();
+      });
+    });
+  }
+
+  const modulePanel = document.getElementById('modulePanel');
+  const moduleToggle = document.getElementById('moduleToggle');
+
+  // 浮层定位：窄屏交给 CSS 控制左右，宽屏按锚点右对齐并夹在视口内
+  function placePanel(panel, anchor, width) {
+    const r = anchor.getBoundingClientRect();
+    if (window.innerWidth <= 900) {
+      panel.style.left = '';
+      panel.style.width = '';
+    } else {
+      const left = Math.max(12, Math.min(r.right - width, window.innerWidth - width - 12));
+      panel.style.left = left + 'px';
+      panel.style.width = width + 'px';
+    }
+    panel.style.top = (r.bottom + 8) + 'px';
+  }
+
+  function openModulePanel() {
+    renderModuleList();
+    modulePanel.hidden = false;
+    placePanel(modulePanel, moduleToggle, 246);
+  }
+
+  moduleToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    const willOpen = modulePanel.hidden;
+    searchPanel.hidden = true;
+    modulePanel.hidden = !willOpen;
+    if (willOpen) { renderModuleList(); placePanel(modulePanel, moduleToggle, 246); }
+  });
+  modulePanel.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('moduleAll').addEventListener('click', () => {
+    hidden.clear();
+    applyModules();
+    renderModuleList();
+  });
+
+  /* ================= 全局搜索 ================= */
+  const searchBox = document.getElementById('searchBox');
+  const searchInput = document.getElementById('searchInput');
+  const searchPanel = document.getElementById('searchPanel');
+  const searchClear = document.getElementById('searchClear');
+  const searchTrigger = document.getElementById('searchTrigger');
+  const topbar = document.querySelector('.topbar');
+
+  const SEARCH_INDEX = (() => {
+    const list = [];
+    TENANTS.forEach((t, i) => list.push({
+      type: '租户', color: '#1677ff', name: t.name,
+      desc: '实际用户 ' + t.users + ' 人 · 活跃 ' + t.active + ' 人 · 套餐 ' + t.max,
+      mod: 'trend', tenant: i
+    }));
+    MODULES.forEach(m => list.push({
+      type: '看板模块', color: '#8b5cf6', name: m.name, desc: m.desc, mod: m.key
+    }));
+    FEATURES.forEach(f => list.push({
+      type: '一级菜单', color: '#36cfc9', name: f.name,
+      desc: '近 7 天点击 ' + f.value.toLocaleString() + ' 次', mod: 'feature'
+    }));
+    FEATURES.forEach(f => f.children.forEach(c => list.push({
+      type: '菜单页面', color: '#94a3b8', name: c.name,
+      desc: '归属「' + f.name + '」· ' + c.value.toLocaleString() + ' 次', mod: 'feature'
+    })));
+    document.querySelectorAll('.nav-item').forEach(a => list.push({
+      type: '功能菜单', color: '#f5a623', name: a.textContent.trim(), desc: '侧边栏功能入口', nav: a
+    }));
+    return list;
+  })();
+
+  const TYPE_ORDER = ['租户', '看板模块', '一级菜单', '菜单页面', '功能菜单'];
+  let sHits = [], sActive = 0;
+
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const mark = (text, kw) => {
+    const i = text.toLowerCase().indexOf(kw);
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + kw.length)) +
+      '</mark>' + esc(text.slice(i + kw.length));
+  };
+
+  function renderResults() {
+    const kw = searchInput.value.trim().toLowerCase();
+    searchBox.classList.toggle('has-value', searchInput.value.length > 0);
+
+    if (!kw) {
+      sHits = [];
+      searchPanel.innerHTML =
+        '<div class="sp-empty">试试搜索 <b>融查查科技</b>、<b>用户规模</b>、<b>贷款计算器</b><br/>' +
+        '支持租户、看板模块、菜单页面与功能菜单</div>';
+      return;
+    }
+
+    sHits = SEARCH_INDEX.filter(it =>
+      it.name.toLowerCase().includes(kw) || it.desc.toLowerCase().includes(kw));
+
+    if (!sHits.length) {
+      searchPanel.innerHTML = '<div class="sp-empty">没有匹配「<b>' + esc(searchInput.value.trim()) +
+        '</b>」的结果<br/>换个关键词试试</div>';
+      return;
+    }
+
+    // 按类型分组，组内保持索引原有顺序
+    const groups = {};
+    sHits.forEach(h => { (groups[h.type] = groups[h.type] || []).push(h); });
+    sHits = [];
+    let html = '';
+    TYPE_ORDER.forEach(tp => {
+      if (!groups[tp]) return;
+      html += '<div class="sp-group">' + tp + ' · ' + groups[tp].length + '</div>';
+      groups[tp].forEach(h => {
+        const idx = sHits.length;
+        sHits.push(h);
+        html += '<div class="sp-item" data-idx="' + idx + '">' +
+          '<span class="sp-ico" style="background:' + h.color + '">' + esc(tp.slice(0, 1)) + '</span>' +
+          '<span class="sp-main"><span class="sp-name">' + mark(h.name, kw) + '</span>' +
+          '<span class="sp-desc">' + esc(h.desc) + '</span></span></div>';
+      });
+    });
+    html += '<div class="sp-foot"><span><kbd>↑</kbd><kbd>↓</kbd> 切换</span>' +
+      '<span><kbd>Enter</kbd> 定位</span><span><kbd>Esc</kbd> 关闭</span></div>';
+    searchPanel.innerHTML = html;
+    sActive = 0;
+    paintActive();
+
+    searchPanel.querySelectorAll('.sp-item').forEach(el => {
+      el.addEventListener('mouseenter', () => { sActive = Number(el.dataset.idx); paintActive(); });
+      el.addEventListener('click', () => goto(sHits[Number(el.dataset.idx)]));
+    });
+  }
+
+  function paintActive() {
+    searchPanel.querySelectorAll('.sp-item').forEach(el => {
+      const on = Number(el.dataset.idx) === sActive;
+      el.classList.toggle('on', on);
+      if (on) el.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function openSearch() {
+    searchPanel.hidden = false;
+    modulePanel.hidden = true;
+    placePanel(searchPanel, searchBox, 340);
+    renderResults();
+  }
+  function closeSearch() {
+    searchPanel.hidden = true;
+    if (window.innerWidth <= 900) {
+      topbar.classList.remove('search-open');
+      searchInput.blur();
+    }
+  }
+
+  // 定位到目标：必要时先恢复被隐藏的模块，再滚动 + 高亮闪烁
+  function goto(hit) {
+    if (!hit) return;
+    closeSearch();
+
+    if (hit.tenant !== undefined) {
+      // 命中租户：三处租户筛选一并切到该租户，避免看板前后口径不一致
+      selectTenant(hit.tenant);
+      renderSource(hit.tenant);
+      selectFeature(hit.tenant);
+    }
+    if (hit.nav) {
+      document.querySelectorAll('.nav-item').forEach(a => a.classList.remove('flash'));
+      void hit.nav.offsetWidth;
+      hit.nav.classList.add('flash');
+      setTimeout(() => hit.nav.classList.remove('flash'), 1700);
+      if (window.innerWidth <= 900) {
+        sidebar.classList.add('open');
+        mask.classList.add('show');
+      }
+      return;
+    }
+    if (hidden.has(hit.mod)) {
+      hidden.delete(hit.mod);
+      applyModules();
+    }
+    const el = moduleEl(hit.mod);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1700);
+  }
+
+  searchInput.addEventListener('focus', openSearch);
+  searchInput.addEventListener('input', () => {
+    searchPanel.hidden = false;
+    placePanel(searchPanel, searchBox, 340);
+    renderResults();
+  });
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (sHits.length) { sActive = (sActive + 1) % sHits.length; paintActive(); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (sHits.length) { sActive = (sActive - 1 + sHits.length) % sHits.length; paintActive(); }
+    } else if (e.key === 'Enter') {
+      if (sHits.length) goto(sHits[sActive]);
+    } else if (e.key === 'Escape') {
+      closeSearch();
+      searchInput.value = '';
+      searchBox.classList.remove('has-value');
+    }
+  });
+  searchClear.addEventListener('click', () => {
+    if (searchInput.value) {
+      searchInput.value = '';
+      searchInput.focus();
+      renderResults();
+    } else {
+      closeSearch();
+    }
+  });
+  // 窄屏：放大镜按钮展开搜索框并铺满顶栏
+  searchTrigger.addEventListener('click', e => {
+    e.stopPropagation();
+    modulePanel.hidden = true;
+    topbar.classList.add('search-open');
+    searchPanel.hidden = true;
+    searchInput.focus();
+  });
+  document.addEventListener('click', e => {
+    if (!searchPanel.contains(e.target) && !searchBox.contains(e.target) && e.target !== searchTrigger) {
+      searchPanel.hidden = true;
+    }
+    if (!modulePanel.contains(e.target) && e.target !== moduleToggle) modulePanel.hidden = true;
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { searchPanel.hidden = true; modulePanel.hidden = true; }
+  });
+  window.addEventListener('resize', () => {
+    searchPanel.hidden = true;
+    modulePanel.hidden = true;
+    fitSeatLabels();
+  });
+
+  /* ================= 启动 ================= */
+  trendChart = initChart(document.getElementById('trendChart'), trendOption(-1));
+  renderRangeChips();
+  renderChips();
+  updateTrendHead();
+  renderTable();
+  renderSeat();
+  renderRenew();
+  sourceChart = initChart(document.getElementById('sourceChart'), { series: [] });
+  renderSourceChips();
+  renderSource(-1);
+  renderUsage();
+  initFeature();
+  renderFeatureChips();
+  selectFeature(-1);
+  applyModules();
+  countUp();
+</script>
+</body>
+</html>
