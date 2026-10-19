@@ -225,6 +225,12 @@
   }
   .stat-meta { min-width: 0; }
   .stat-label { font-size: 13px; color: var(--text-3); margin-bottom: 6px; }
+  .stat-tip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px; margin-left: 4px; border-radius: 50%;
+    font-size: 10px; line-height: 1; cursor: help; vertical-align: 1px;
+    color: var(--text-3); border: 1px solid var(--line); background: var(--card);
+  }
   .stat-value {
     font-size: 26px; font-weight: 700; line-height: 1.1;
     letter-spacing: -.6px; font-variant-numeric: tabular-nums;
@@ -540,9 +546,9 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V10.5M10 20V4.5M15 20v-7M20 20v-4.5"/></svg>
           </div>
           <div class="stat-meta">
-            <div class="stat-label">累计访问</div>
-            <div class="stat-value" data-count="8988">0</div>
-            <div class="stat-trend"><span class="up">&#9650; 15.6%</span> 近 7 天</div>
+            <div class="stat-label">近 7 天访问<small class="stat-tip" title="一次有效访问 = 登录用户打开页面并停留满 3 秒，同一用户 30 分钟内只计 1 次">?</small></div>
+            <div class="stat-value" data-count="1286">0</div>
+            <div class="stat-trend"><span class="up">&#9650; 15.6%</span> 较上周</div>
           </div>
         </div>
       </section>
@@ -702,6 +708,10 @@
               <tbody></tbody>
             </table>
           </div>
+          <div class="hint">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            使用率 = 实际认领数量 ÷ 套餐数量；配色：&lt;70% 绿 / 70–80% 黄 / &gt;80% 红
+          </div>
         </div>
 
         <div class="card" data-module="collect">
@@ -723,6 +733,37 @@
               <tbody></tbody>
             </table>
           </div>
+          <div class="hint">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            使用率 = 实际采集数量 ÷ 套餐数量；配色：&lt;70% 绿 / 70–80% 黄 / &gt;80% 红
+          </div>
+        </div>
+      </section>
+
+      <!-- 各租户接口调用情况 -->
+      <section class="card" data-module="api">
+        <div class="card-head">
+          <div class="card-title">接口调用情况<small>按接口统计各租户的调用量，单位：家</small></div>
+          <div class="chips">
+            <span class="chip active" style="cursor:default" id="apiSummary">—</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl static" id="apiTable">
+            <thead>
+              <tr>
+                <th>租户名称</th>
+                <th class="num">企业关键标签</th>
+                <th class="num">企业联系电话</th>
+                <th class="num">企业基本信息</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="hint">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+          单位「家」= 调用的企业数量；占比 = 该租户合计调用 ÷ 全平台合计调用。三个接口分别统计，同一家企业在不同接口被各计 1 家
         </div>
       </section>
     </main>
@@ -750,11 +791,11 @@
   // claim=套餐数量(可认领额度)，claimed=实际认领数量；collect=套餐数量(可采集额度)，collected=实际采集数量
   // feat 顺序固定为 [首页, 客户管理, 拓客空间, 产品管理, 我的]，各租户同一列之和 = FEATURES 中该模块的 value
   const TENANTS = [
-    { name: '融查查科技', max: 300, users: 128, active: 76, src: [53, 34, 26, 15], claim: 1000, claimed: 786, collect: 200, collected: 190, feat: [6940, 4800, 2900, 2050, 1190], series: [58, 63, 61, 69, 72, 65, 76],
+    { name: '融查查科技', max: 300, users: 128, active: 76, src: [53, 34, 26, 15], claim: 1000, claimed: 786, collect: 200, collected: 190, api: [620, 486, 705], feat: [6940, 4800, 2900, 2050, 1190], series: [58, 63, 61, 69, 72, 65, 76],
       admins: 6, neverLogin: 12, plan: '旗舰版', mrr: 38000, renew: '2026-11-30', owner: '张敏' },
-    { name: '二号企服',   max: 100, users: 68,  active: 41, src: [0, 30, 24, 14],  claim: 600,  claimed: 415, collect: 120, collected: 78,  feat: [3690, 2550, 1540, 1090, 634],  series: [28, 32, 30, 35, 37, 34, 41],
+    { name: '二号企服',   max: 100, users: 68,  active: 41, src: [0, 30, 24, 14],  claim: 600,  claimed: 415, collect: 120, collected: 78,  api: [340, 268, 392], feat: [3690, 2550, 1540, 1090, 634],  series: [28, 32, 30, 35, 37, 34, 41],
       admins: 3, neverLogin: 6, plan: '专业版', mrr: 26000, renew: '2026-12-15', owner: '李伟' },
-    { name: '融享惠',     max: 40,  users: 34,  active: 21, src: [0, 16, 11, 7],   claim: 300,  claimed: 285, collect: 60,  collected: 19,  feat: [1850, 1282, 778,  554,  321],  series: [12, 15, 14, 17, 18, 16, 21],
+    { name: '融享惠',     max: 40,  users: 34,  active: 21, src: [0, 16, 11, 7],   claim: 300,  claimed: 285, collect: 60,  collected: 19,  api: [156, 122, 178], feat: [1850, 1282, 778,  554,  321],  series: [12, 15, 14, 17, 18, 16, 21],
       admins: 2, neverLogin: 16, plan: '基础版', mrr: 12000, renew: '2026-10-31', owner: '张敏' }
   ];
 
@@ -1326,6 +1367,24 @@
       ' 家 · 余量 ' + c2.left.toLocaleString() + ' 家';
   }
 
+  /* ===== 接口调用情况：企业关键标签 / 企业联系电话 / 企业基本信息 ===== */
+  // 单位「家」= 调用的企业数量，三个接口分别统计，不做跨接口去重
+  const API_ITEMS = ['企业关键标签', '企业联系电话', '企业基本信息'];
+
+  function renderApi() {
+    const colTotals = API_ITEMS.map((_, i) => TENANTS.reduce((s, t) => s + t.api[i], 0));
+
+    document.querySelector('#apiTable tbody').innerHTML = TENANTS.map((t, i) =>
+      '<tr>' +
+      '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
+      t.api.map(v => '<td class="num">' + v.toLocaleString() + '</td>').join('') +
+      '</tr>'
+    ).join('');
+
+    document.getElementById('apiSummary').textContent =
+      API_ITEMS.map((n, i) => n + ' ' + colTotals[i].toLocaleString()).join(' · ');
+  }
+
   /* ===== 菜单分析：堆叠柱（一根柱 = 一个一级菜单，段 = 细分页面） ===== */
   // 按比例把整数 total 拆成整数份（最大余数法），保证各项之和严格等于 total
   function splitByRatio(total, ratios) {
@@ -1488,7 +1547,7 @@
 
   /* ================= 看板模块：显示 / 隐藏 ================= */
   const MODULES = [
-    { key: 'stats',   name: '核心指标',            desc: '当前在线 / 注册用户 / 租户入驻 / 累计访问' },
+    { key: 'stats',   name: '核心指标',            desc: '当前在线 / 注册用户 / 租户入驻 / 近 7 天访问' },
     { key: 'trend',   name: '活跃情况',            desc: '各租户活跃曲线 + 时间范围切换' },
     { key: 'seat',    name: '登录情况',            desc: '套餐用户 / 登录情况 / 已开通 / 从未登录 / 未开通 / 未登录率' },
     { key: 'scale',   name: '用户规模',            desc: '套餐用户 / 实际用户 / 今日活跃用户 / 使用率' },
@@ -1496,7 +1555,8 @@
     { key: 'source',  name: '客户来源占比',        desc: 'EC同步 / 用户创建 / 拓客空间 / Excel导入' },
     { key: 'feature', name: '菜单分析',            desc: '五个一级菜单及细分页面的点击量' },
     { key: 'claim',   name: '拓客空间 · 数据认领', desc: '套餐数量 / 已认领 / 认领余量' },
-    { key: 'collect', name: '税票采集',            desc: '套餐数量 / 已采集 / 采集余量' }
+    { key: 'collect', name: '税票采集',            desc: '套餐数量 / 已采集 / 采集余量' },
+    { key: 'api',     name: '接口调用情况',        desc: '企业关键标签 / 企业联系电话 / 企业基本信息' }
   ];
   const LS_KEY = 'zeus.dashboard.hiddenModules';
   let hidden = new Set();
@@ -1790,6 +1850,7 @@
   renderSourceChips();
   renderSource(-1);
   renderUsage();
+  renderApi();
   initFeature();
   renderFeatureChips();
   selectFeature(-1);
