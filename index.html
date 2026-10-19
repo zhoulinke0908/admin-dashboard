@@ -330,11 +330,13 @@
   .hint { font-size: 11px; color: var(--text-3); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
   .hint[hidden] { display: none; }
 
-  /* ============ 席位构成 ============ */
+  /* ============ 登录情况 ============ */
+  /* 汇总行：位于卡片标题下方独占一行 */
+  .sum-row { display: flex; margin: -2px 0 12px; }
   .seat-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
   .seat-legend .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
   .seat-legend .lg i { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
-  /* 构成条：四段（管理员 / 已登录员工 / 从未登录 / 未开通），每段数字都必须标出 */
+  /* 构成条：三段（登录过 / 从未登录 / 未开通），每段数字都必须标出 */
   .seat-stack { display: flex; flex: 1; height: 22px; border-radius: 4px; overflow: hidden; font-size: 11px; color: #fff; }
   .seat-stack > i { display: grid; place-items: center; font-style: normal; font-variant-numeric: tabular-nums; }
   .seat-cell { display: flex; align-items: center; min-width: 220px; }
@@ -561,10 +563,10 @@
         </div>
       </section>
 
-      <!-- 席位构成 -->
+      <!-- 登录情况 -->
       <section class="card" data-module="seat">
         <div class="card-head">
-          <div class="card-title">席位构成<small>套餐席位的使用与闲置</small></div>
+          <div class="card-title">登录情况<small>套餐用户的登录与开通状态</small></div>
           <div class="chips"><span class="chip active" style="cursor:default" id="seatSummary">—</span></div>
         </div>
         <div class="seat-legend" id="seatLegend"></div>
@@ -573,8 +575,8 @@
             <thead>
               <tr>
                 <th>租户名称</th>
-                <th class="num">总席位</th>
-                <th>席位构成</th>
+                <th class="num">套餐用户</th>
+                <th>登录情况</th>
                 <th class="num">已开通</th>
                 <th class="num">从未登录</th>
                 <th class="num">未开通</th>
@@ -586,7 +588,7 @@
         </div>
         <div class="hint">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
-          已开通 = 管理员 + 已登录员工 + 从未登录；未登录率 = 从未登录 / 已开通，两者均不含未开通席位（未开通 + 从未登录即闲置席位，是续费谈判时最先被压缩的部分）。配色：&lt;10% 绿 / 10–15% 黄 / &gt;15% 红
+          已开通 = 登录过 + 从未登录；未登录率 = 从未登录 ÷ 已开通；闲置席位 = 从未登录 + 未开通（未开通席位不计入未登录率的分母）。配色：&lt;10% 绿 / 10–15% 黄 / &gt;15% 红
         </div>
       </section>
 
@@ -594,7 +596,7 @@
       <section class="grid-2">
         <div class="card" data-module="scale">
           <div class="card-head">
-            <div class="card-title">用户规模<small>套餐上限 / 实际 / 活跃</small></div>
+            <div class="card-title">用户规模<small>套餐用户 / 实际用户 / 今日活跃</small></div>
             <div class="chips">
               <span class="chip active" style="cursor:default" id="tenantCountChip">—</span>
             </div>
@@ -604,14 +606,18 @@
               <thead>
                 <tr>
                   <th>租户名称</th>
-                  <th>套餐数量</th>
+                  <th>套餐用户</th>
                   <th>实际用户数</th>
-                  <th>活跃用户数</th>
+                  <th>今日活跃用户数</th>
                   <th>使用率</th>
                 </tr>
               </thead>
               <tbody></tbody>
             </table>
+          </div>
+          <div class="hint">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
+            使用率 = 实际用户数 ÷ 套餐用户
           </div>
         </div>
 
@@ -637,7 +643,7 @@
           </div>
           <div class="hint">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
-            剩余不足 30 天需立即介入；30–60 天结合使用率判断是否可提前续约；使用率 = 活跃用户 / 实际用户
+            剩余不足 30 天需立即介入；30–60 天结合使用率判断是否可提前续约
           </div>
         </div>
       </section>
@@ -680,8 +686,8 @@
         <div class="card" data-module="claim">
           <div class="card-head">
             <div class="card-title">拓客空间 · 数据认领<small>按套餐额度统计，单位：条</small></div>
-            <div class="chips"><span class="chip active" style="cursor:default" id="claimSummary">—</span></div>
           </div>
+          <div class="sum-row"><span class="chip active" style="cursor:default" id="claimSummary">—</span></div>
           <div class="tbl-wrap">
             <table class="tbl static" id="claimTable">
               <thead>
@@ -701,8 +707,8 @@
         <div class="card" data-module="collect">
           <div class="card-head">
             <div class="card-title">税票采集<small>按套餐额度统计，单位：家</small></div>
-            <div class="chips"><span class="chip active" style="cursor:default" id="collectSummary">—</span></div>
           </div>
+          <div class="sum-row"><span class="chip active" style="cursor:default" id="collectSummary">—</span></div>
           <div class="tbl-wrap">
             <table class="tbl static" id="collectTable">
               <thead>
@@ -737,7 +743,8 @@
     { key: '1y', label: '近一年',  gran: 'month', points: 12, seed: 71 }
   ];
 
-  // 字段说明：max=套餐最大可开用户数，users=实际用户数，active=活跃用户数
+  // 字段说明：max=套餐用户数，users=实际用户数，active=今日活跃用户数
+  // admins=管理员数，构成条改为三段后不再单独展示，仅保留原始数据
   // src 顺序固定为 [EC同步, 用户创建, 拓客空间, Excel导入]，四项之和 = users
   // 注：EC同步仅融查查科技开通，另两家为 0，环形图与图例中会隐藏值为 0 的来源
   // claim=套餐数量(可认领额度)，claimed=实际认领数量；collect=套餐数量(可采集额度)，collected=实际采集数量
@@ -986,20 +993,17 @@
     });
   }
 
-  /* ================= 席位构成 ================= */
+  /* ================= 登录情况 ================= */
   const TODAY = '2026-10-14';
   const SEAT_SEGS = [
-    { n: '管理员', c: '#1677ff' },
-    { n: '已登录员工', c: '#7aa7e8' },
+    { n: '登录过', c: '#1677ff' },
     { n: '从未登录', c: '#f59e0b' },
     { n: '未开通', c: '#e5e6eb' }
   ];
-  // 四段构成：管理员 / 已登录员工 / 从未登录 / 未开通，四段之和恒等于套餐席位数
+  // 三段构成：登录过 / 从未登录 / 未开通，三段之和恒等于套餐用户数
   function seatParts(t) {
-    const logged = t.users - t.neverLogin;
     return [
-      { v: t.admins, c: '#1677ff' },
-      { v: logged - t.admins, c: '#7aa7e8' },
+      { v: t.users - t.neverLogin, c: '#1677ff' },
       { v: t.neverLogin, c: '#f59e0b' },
       { v: t.max - t.users, c: '#e5e6eb' }
     ];
@@ -1033,7 +1037,7 @@
     tb.innerHTML = TENANTS.map((t, i) => {
       const logged = t.users - t.neverLogin;
       const unopened = t.max - t.users;
-      // 已开通 = 管理员 + 已登录员工 + 从未登录；未登录率 = 从未登录 / 已开通，未开通席位不计入分母
+      // 已开通 = 登录过 + 从未登录；未登录率 = 从未登录 / 已开通，未开通席位不计入分母
       const rate = Math.round(t.neverLogin / t.users * 100);
       total += t.max; actSum += logged; neverSum += t.neverLogin; unopenSum += unopened;
       const color = badColor(rate);
@@ -1050,7 +1054,7 @@
       // 合计行同口径：分子 = 三家从未登录之和，分母 = 三家已开通之和（不含未开通席位）
       const openedSum = actSum + neverSum;
       const rate = Math.round(neverSum / openedSum * 100);
-      const all = { admins: TENANTS.reduce((s, t) => s + t.admins, 0), users: actSum + neverSum, neverLogin: neverSum, max: total };
+      const all = { users: actSum + neverSum, neverLogin: neverSum, max: total };
       return '<tr style="background:#fafbfc">' +
         '<td><b>合计</b></td>' +
         '<td class="num strong">' + total + '</td>' +
@@ -1451,8 +1455,8 @@
   const MODULES = [
     { key: 'stats',   name: '核心指标',            desc: '当前在线 / 注册用户 / 租户入驻 / 累计访问' },
     { key: 'trend',   name: '活跃情况',            desc: '各租户活跃曲线 + 时间范围切换' },
-    { key: 'seat',    name: '席位构成',            desc: '总席位 / 席位构成 / 已开通 / 从未登录 / 未开通 / 未登录率' },
-    { key: 'scale',   name: '用户规模',            desc: '套餐数量 / 实际用户 / 活跃用户 / 使用率' },
+    { key: 'seat',    name: '登录情况',            desc: '套餐用户 / 登录情况 / 已开通 / 从未登录 / 未开通 / 未登录率' },
+    { key: 'scale',   name: '用户规模',            desc: '套餐用户 / 实际用户 / 今日活跃用户 / 使用率' },
     { key: 'renew',   name: '续费日历',            desc: '到期日 / 剩余天数 / MRR / 到期判断' },
     { key: 'source',  name: '客户来源占比',        desc: 'EC同步 / 用户创建 / 拓客空间 / Excel导入' },
     { key: 'feature', name: '菜单分析',            desc: '五个一级菜单及细分页面的点击量' },
