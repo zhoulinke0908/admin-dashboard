@@ -643,7 +643,7 @@
           </div>
           <div class="hint">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4M8 5.2v.8" stroke-linecap="round"/></svg>
-            剩余不足 30 天需立即介入；30–60 天结合使用率判断是否可提前续约
+            剩余不足 30 天需立即介入；30–60 天结合使用率判断是否可提前续约。配色：&lt;30 天红 / 30–60 天黄 / &gt;60 天绿
           </div>
         </div>
       </section>
@@ -968,6 +968,10 @@
   function badColor(v) {
     return v > 15 ? '#f5222d' : v >= 10 ? '#faad14' : '#23c343';
   }
+  // ③ 续费剩余天数：剩得越少越危险 —— < 30 天红｜30–60 天黄｜> 60 天绿
+  function renewColor(d) {
+    return d < 30 ? '#f5222d' : d <= 60 ? '#faad14' : '#23c343';
+  }
 
   /* ================= 表格 ================= */
   function renderTable() {
@@ -1086,9 +1090,9 @@
       if (d < 30) { tag = '即将到期'; cls = 'red'; }
       else if (d <= 60) { tag = use >= 55 ? '可提前续约' : '需先复盘'; cls = use >= 55 ? 'green' : 'orange'; }
       else { tag = '观察中'; cls = 'gray'; }
-      // 进度条 = 到期倒计时已消耗比例（越小剩余的越少），配色与全站进度条一致
+      // 进度条 = 到期倒计时已消耗比例；配色改按剩余天数分档（剩得越少越危险）
       const barW = Math.max(4, Math.min(100, (90 - d) / 90 * 100));
-      const dc = barColor(barW);
+      const dc = renewColor(d);
       return '<tr>' +
         '<td><span class="tname"><i class="dot" style="background:' + TENANT_COLORS[i] + '"></i>' + t.name + '</span></td>' +
         '<td>' + t.plan + '</td>' +
