@@ -322,7 +322,7 @@
   .chart-box { height: 262px; }
   .chart-box.tall { height: 330px; }
   .chart-box.short { height: 240px; }
-  .chart-box.stackbar { height: 288px; }
+  .chart-box.stackbar { height: 340px; }
 
   .card-head.stacked { flex-direction: column; align-items: flex-start; gap: 10px; }
   .card-head.stacked .chips { justify-content: flex-start; }
@@ -770,46 +770,72 @@
   // 每个功能模块为一个整体，children 为该模块内细分页面的点击量，children 之和 = 模块 value
   const FEATURES = [
     { name: '首页', value: 12480, children: [
-      { name: '征信网点',   value: 3862 },
-      { name: '贷款计算器', value: 3415 },
-      { name: '在线查税',   value: 2476 },
-      { name: '社保查询',   value: 1483 },
-      { name: '公积金查询', value: 1244 }
+      { name: '征信网点',   value: 3245 },
+      { name: '贷款计算器', value: 2745 },
+      { name: '房产评估',   value: 1373 },
+      { name: '在线查税',   value: 1248 },
+      { name: '准入判断',   value: 998 },
+      { name: '报告识别',   value: 874 },
+      { name: '社保查询',   value: 749 },
+      { name: '公积金查询', value: 499 },
+      { name: '创建客户',   value: 374 },
+      { name: '热门产品',   value: 250 },
+      { name: '精选产品',   value: 125 }
     ]},
     { name: '客户管理', value: 8632, children: [
-      { name: '客户列表', value: 3241 },
-      { name: '客户详情', value: 2158 },
-      { name: '跟进记录', value: 1496 },
-      { name: '标签管理', value: 984 },
-      { name: '数据认领', value: 753 }
+      { name: '筛选',           value: 1208 },
+      { name: '搜索',           value: 1122 },
+      { name: '批量',           value: 777 },
+      { name: '创建分组',       value: 518 },
+      { name: '创建客户',       value: 518 },
+      { name: '查看方案意向方案', value: 518 },
+      { name: '办理信息',       value: 518 },
+      { name: '设置',           value: 432 },
+      { name: '排序规则',       value: 432 },
+      { name: '转发分享',       value: 432 },
+      { name: '签约信息',       value: 432 },
+      { name: '跟进情况',       value: 431 },
+      { name: '结算信息',       value: 345 },
+      { name: '文件信息',       value: 345 },
+      { name: '群呼',           value: 604 }
     ]},
     { name: '拓客空间', value: 5218, children: [
-      { name: '拓客海报',   value: 1876 },
-      { name: '邀请二维码', value: 1342 },
-      { name: '线索池',     value: 968 },
-      { name: '分享记录',   value: 732 },
-      { name: '拓客排行',   value: 300 }
+      { name: '查企业',           value: 2870 },
+      { name: '查法人',           value: 1565 },
+      { name: '认领更多',         value: 470 },
+      { name: '认领当前选中客户', value: 313 }
     ]},
     { name: '产品管理', value: 3694, children: [
-      { name: '产品列表',   value: 1241 },
-      { name: '产品详情',   value: 836 },
-      { name: '方案配置',   value: 728 },
-      { name: '订单管理',   value: 609 },
-      { name: '产品上下架', value: 280 }
+      { name: '产品详情',         value: 2290 },
+      { name: '点击查看操作指引', value: 517 },
+      { name: '点击联系客服',     value: 517 },
+      { name: '立即推广',         value: 370 }
     ]},
     { name: '我的', value: 2145, children: [
-      { name: '个人资料', value: 682 },
-      { name: '积分账户', value: 574 },
-      { name: '税务券',   value: 431 },
-      { name: '消息中心', value: 286 },
-      { name: '设置',     value: 172 }
+      { name: '签到领积分', value: 386 },
+      { name: '去拓客空间', value: 257 },
+      { name: '去授权采集', value: 215 },
+      { name: '去生成报告', value: 193 },
+      { name: '去充值',     value: 193 },
+      { name: '我的佣金',   value: 172 },
+      { name: '我的邀约',   value: 150 },
+      { name: '我的团队',   value: 129 },
+      { name: '邀请好友',   value: 107 },
+      { name: '设置',       value: 107 },
+      { name: '关于我们',   value: 86 },
+      { name: '系统消息',   value: 86 },
+      { name: '联系我们',   value: 64 }
     ]}
   ];
   const FEATURE_TOTAL = FEATURES.reduce((s, f) => s + f.value, 0); // 32,169
 
-  // 柱体内每一段对应模块下的一个细分页面，按位置取色（最多 5 段）
-  const FEATURE_COLORS = ['#1677ff', '#36cfc9', '#8b5cf6', '#f5a623', '#94a3b8'];
-  const FEATURE_SEGMENTS = Math.max.apply(null, FEATURES.map(f => f.children.length)); // 5
+  // 柱体内每一段对应模块下的一个细分页面，按位置取色（最多 15 段，色板逐段唯一）
+  const FEATURE_COLORS = [
+    '#1677ff', '#36cfc9', '#8b5cf6', '#f5a623', '#94a3b8',
+    '#2f54eb', '#13c2c2', '#722ed1', '#fa8c16', '#597ef7',
+    '#5cdbd3', '#b37feb', '#ffc53d', '#a6adb8', '#40a9ff'
+  ];
+  const FEATURE_SEGMENTS = Math.max.apply(null, FEATURES.map(f => f.children.length)); // 15
   // 每个模块内各细分页面的占比，用于把「该租户该模块的点击量」按比例拆到细分页面
   const FEATURE_RATIO = FEATURES.map(f => f.children.map(c => c.value / f.value));
 
@@ -1334,8 +1360,8 @@
         barWidth: narrow ? '50%' : '38%',
         itemStyle: {
           color: FEATURE_COLORS[c % FEATURE_COLORS.length],
-          borderColor: 'rgba(255,255,255,.85)',
-          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,.55)',
+          borderWidth: 0.5,
           borderRadius: isTop ? [5, 5, 0, 0] : 0
         },
         emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(29,33,41,.18)' } },
@@ -1344,11 +1370,16 @@
           fontSize: 12, fontWeight: 600,
           formatter: p => totals[p.dataIndex].toLocaleString()
         } : { show: false },
-        // 每个数据项自带页面名，供 tooltip 逐段展示
-        data: FEATURES.map((f, m) => ({
-          name: f.children[c] ? f.children[c].name : '—',
-          value: matrix[m][c] || 0
-        }))
+        // 每个数据项自带页面名，供 tooltip 逐段展示；占比过窄的段去掉描边，避免白线吃掉色块
+        data: FEATURES.map((f, m) => {
+          const v = matrix[m][c] || 0;
+          const thin = totals[m] > 0 && v / totals[m] < 0.012;
+          return {
+            name: f.children[c] ? f.children[c].name : '—',
+            value: v,
+            itemStyle: thin ? { borderWidth: 0 } : {}
+          };
+        })
       });
     }
 
